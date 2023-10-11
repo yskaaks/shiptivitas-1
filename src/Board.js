@@ -21,6 +21,23 @@ export default class Board extends React.Component {
       complete: React.createRef(),
     }
   }
+  componentDidMount() {
+      this.drake = Dragula(
+          [this.swimlanes.backlog.current, this.swimlanes.inProgress.current, this.swimlanes.complete.current]
+      );
+
+      this.drake.on('drop', (el, target, source, sibling) => {
+          this.handleCardMove(el, target, source);
+      });
+  }
+
+componentWillUnmount() {
+    if (this.drake) {
+        this.drake.destroy();
+    }
+}
+
+
   getClients() {
     return [
       ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'in-progress'],
@@ -51,10 +68,11 @@ export default class Board extends React.Component {
     }));
   }
   renderSwimlane(name, clients, ref) {
-    return (
-      <Swimlane name={name} clients={clients} dragulaRef={ref}/>
-    );
+      return (
+        <Swimlane name={name} clients={clients} dragulaRef={ref} status={name.toLowerCase().replace(' ', '-')} />
+      );
   }
+
 
   render() {
     return (
@@ -75,4 +93,17 @@ export default class Board extends React.Component {
       </div>
     );
   }
+  handleCardMove(el, target, source) {
+      const cardId = el.getAttribute('data-id');
+      const targetStatus = target.getAttribute('data-status');
+      
+      const clients = this.state.clients;
+      const card = clients[source.getAttribute('data-status')].find(client => client.id === cardId);
+      clients[source.getAttribute('data-status')] = clients[source.getAttribute('data-status')].filter(client => client.id !== cardId);
+      card.status = targetStatus;
+      clients[targetStatus].push(card);
+      
+      this.setState({ clients });
+  }
+
 }
